@@ -113,13 +113,13 @@
             titulo.innerText = "⚡ Eletrização por Contato";
             texto.innerText = "🔴 Toque e encoste a esfera vermelha (+) na esfera cinza (neutra). As cargas se igualam.";
             criarObj('obj1', 100, 150, 'esfera', '#ef4444', 10, '+10');
-            criarObj('obj2', 600, 150, 'esfera', '#64748b', 0, '0');
+            criarObj('obj2', 300, 150, 'esfera', '#64748b', 0, '0');
         }
         else if(modo === 'inducao') {
             titulo.innerText = "⚡ Eletrização por Indução";
             texto.innerText = "🔵 Aproxime o bastão negativo da esfera neutra sem tocar. Observe a polarização.";
             criarObj('obj1', 50, 160, 'retangulo', '#3b82f6', -10, '- - -');
-            criarObj('obj2', 500, 150, 'esfera', '#64748b', 0, 'NEUTRA');
+            criarObj('obj2', 300, 150, 'esfera', '#64748b', 0, 'NEUTRA');
         }
     }
 
