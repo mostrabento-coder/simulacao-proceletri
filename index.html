@@ -2,76 +2,96 @@
 <html lang="pt-PT">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Simulador de Física Mobile</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Simulador de Física Ultra-Mobile</title>
     <style>
         * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
-        :root { --fundo: #0f172a; --card: #1e293b; --acento: #fbbf24; }
+        :root { 
+            --fundo: #0f172a; 
+            --card: #1e293b; 
+            --acento: #fbbf24; 
+            --altura-real: 100vh; /* Fallback */
+            --altura-real: 100dvh; /* Altura dinâmica real do dispositivo */
+        }
         
         body { 
-            background: var(--fundo); color: white; font-family: system-ui, sans-serif; 
-            margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+            background: var(--fundo); color: white; font-family: system-ui, -apple-system, sans-serif; 
+            margin: 0; padding: 0;
+            display: flex; flex-direction: column; 
+            height: var(--altura-real); 
+            overflow: hidden; /* Trava o scroll da página inteira */
         }
 
-        /* Menu fixo no topo */
-        .menu { display: flex; width: 100%; gap: 2px; padding: 5px; background: #0f172a; }
+        /* Menu Superior */
+        .menu { 
+            display: flex; width: 100%; gap: 4px; padding: 8px; 
+            background: #020617; flex-shrink: 0; 
+        }
         .tab { 
-            flex: 1; padding: 12px 5px; border: none; background: #334155; color: #94a3b8; 
-            border-radius: 8px; font-weight: bold; font-size: 0.75rem; transition: 0.2s;
+            flex: 1; padding: 10px 2px; border: none; background: #334155; color: #94a3b8; 
+            border-radius: 6px; font-weight: bold; font-size: 11px; text-transform: uppercase;
         }
-        .tab.ativa { background: var(--acento); color: #000; }
+        .tab.ativa { background: var(--acento); color: #000; box-shadow: 0 0 10px rgba(251, 191, 36, 0.3); }
 
-        /* Área Principal */
-        .container { flex: 1; display: flex; flex-direction: column; padding: 10px; gap: 10px; }
+        /* Área do Simulador (O que sobra de espaço) */
+        .container { 
+            flex: 1; /* Ocupa exatamente o espaço entre o menu e o painel inferior */
+            display: flex; flex-direction: column; padding: 8px; overflow: hidden;
+        }
         
         .palco { 
-            flex: 1; /* Ocupa o espaço disponível */
-            background: #000; border-radius: 12px; position: relative; 
+            flex: 1; background: #000; border-radius: 12px; position: relative; 
             border: 2px solid #334155; overflow: hidden; touch-action: none;
         }
         
-        /* Elementos */
+        /* Elementos Interativos */
         .obj { 
             position: absolute; display: flex; align-items: center; justify-content: center; 
-            border: 2px solid #fff; transition: background 0.3s; touch-action: none; z-index: 10;
+            border: 2px solid #fff; touch-action: none; z-index: 10;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
-        .esfera { width: 65px; height: 65px; border-radius: 50%; }
-        .retangulo { width: 100px; height: 35px; border-radius: 6px; }
+        .esfera { width: 60px; height: 60px; border-radius: 50%; }
+        .retangulo { width: 90px; height: 35px; border-radius: 6px; }
         
-        /* Labels e Instruções */
         .carga-txt { 
-            position: absolute; top: -25px; white-space: nowrap;
+            position: absolute; top: -30px; white-space: nowrap;
             color: var(--acento); font-size: 11px; font-weight: bold;
-            background: rgba(0,0,0,0.8); padding: 2px 6px; border-radius: 4px;
+            background: rgba(0,0,0,0.85); padding: 2px 8px; border-radius: 4px;
+            pointer-events: none;
         }
         
+        /* Painel Inferior Fixo */
         .info-panel { 
-            background: var(--card); padding: 12px; border-radius: 12px; 
-            font-size: 0.85rem; border-bottom: 4px solid var(--acento);
+            background: var(--card); padding: 12px; border-radius: 16px 16px 0 0; 
+            flex-shrink: 0; border-top: 2px solid var(--acento);
+            padding-bottom: env(safe-area-inset-bottom); /* Suporte para iPhone (notch inferior) */
         }
         
-        button.reset-btn {
-            width: 100%; padding: 10px; margin-top: 8px; background: #475569;
-            color: white; border: none; border-radius: 6px; font-weight: bold;
+        .instrucoes-texto { font-size: 13px; color: #cbd5e1; margin: 4px 0 10px 0; min-height: 32px; }
+        
+        .reset-btn {
+            width: 100%; padding: 14px; background: #475569;
+            color: white; border: none; border-radius: 10px; font-weight: bold;
+            font-size: 14px; active-background: #64748b;
         }
     </style>
 </head>
 <body>
 
     <div class="menu">
-        <button id="btn-atrito" class="tab ativa" onclick="mudarModo('atrito')">ATRITO</button>
-        <button id="btn-contato" class="tab" onclick="mudarModo('contato')">CONTATO</button>
-        <button id="btn-inducao" class="tab" onclick="mudarModo('inducao')">INDUÇÃO</button>
+        <button id="btn-atrito" class="tab ativa" onclick="mudarModo('atrito')">Atrito</button>
+        <button id="btn-contato" class="tab" onclick="mudarModo('contato')">Contato</button>
+        <button id="btn-inducao" class="tab" onclick="mudarModo('inducao')">Indução</button>
     </div>
 
     <div class="container">
         <div class="palco" id="palco"></div>
-        
-        <div class="info-panel">
-            <strong id="titulo">Atrito</strong>
-            <p id="texto" style="margin: 5px 0 0 0;">Arraste os itens para interagir.</p>
-            <button class="reset-btn" onclick="resetar()">🔄 Reiniciar</button>
-        </div>
+    </div>
+    
+    <div class="info-panel">
+        <strong id="titulo" style="color: var(--acento); font-size: 15px;">Atrito</strong>
+        <p id="texto" class="instrucoes-texto">Arraste os itens para interagir.</p>
+        <button class="reset-btn" onclick="resetar()">🔄 Reiniciar Simulação</button>
     </div>
 
 <script>
@@ -96,16 +116,18 @@
         div.style.backgroundColor = cor;
         div.dataset.q = carga;
         
-        // Posicionamento inteligente baseado em porcentagem do palco
         const pRect = palco.getBoundingClientRect();
-        div.style.left = (pRect.width * xPercent / 100) + 'px';
-        div.style.top = (pRect.height * yPercent / 100) + 'px';
+        // Garante que o objeto nasça dentro do palco mesmo após o render inicial
+        setTimeout(() => {
+            const rect = palco.getBoundingClientRect();
+            div.style.left = (rect.width * xPercent / 100) + 'px';
+            div.style.top = (rect.height * yPercent / 100) + 'px';
+        }, 50);
 
-        div.innerHTML = `<div class="carga-txt">${label}</div><span class="val">${carga != 0 ? (carga > 0 ? '+'+carga : carga) : ''}</span>`;
+        div.innerHTML = `<div class="carga-txt">${label}</div><span style="font-weight:bold">${carga != 0 ? (carga > 0 ? '+'+carga : carga) : ''}</span>`;
         
         div.addEventListener('mousedown', start);
         div.addEventListener('touchstart', start, {passive: false});
-        
         palco.appendChild(div);
     }
 
@@ -117,20 +139,20 @@
         const txt = document.getElementById('texto');
 
         if(modo === 'atrito') {
-            T.innerText = "⚡ Eletrização por Atrito";
-            txt.innerText = "Esfregue o BALÃO no CASACO repetidamente.";
+            T.innerText = "⚡ Atrito";
+            txt.innerText = "Esfregue o BALÃO no CASACO várias vezes.";
             criarObj('obj1', 15, 40, 'retangulo', '#64748b', 0, 'CASACO');
-            criarObj('obj2', 60, 40, 'esfera', '#475569', 0, 'BALÃO');
+            criarObj('obj2', 65, 40, 'esfera', '#475569', 0, 'BALÃO');
         } else if(modo === 'contato') {
-            T.innerText = "⚡ Eletrização por Contato";
-            txt.innerText = "Toque a esfera VERMELHA na CINZA.";
+            T.innerText = "⚡ Contato";
+            txt.innerText = "Toque a esfera vermelha (+) na cinza (0).";
             criarObj('obj1', 15, 40, 'esfera', '#ef4444', 10, '+10');
-            criarObj('obj2', 60, 40, 'esfera', '#64748b', 0, '0');
+            criarObj('obj2', 65, 40, 'esfera', '#64748b', 0, '0');
         } else if(modo === 'inducao') {
             T.innerText = "⚡ Indução";
-            txt.innerText = "Aproxime o bastão da esfera sem tocar.";
-            criarObj('obj1', 10, 45, 'retangulo', '#3b82f6', -10, 'NEGATIVO');
-            criarObj('obj2', 65, 40, 'esfera', '#64748b', 0, 'NEUTRA');
+            txt.innerText = "Aproxime o bastão (-) da esfera neutra.";
+            criarObj('obj1', 10, 45, 'retangulo', '#3b82f6', -10, 'BASTÃO');
+            criarObj('obj2', 70, 40, 'esfera', '#64748b', 0, 'NEUTRA');
         }
     }
 
@@ -139,9 +161,12 @@
         ativo = this;
         const evt = e.type === 'touchstart' ? e.touches[0] : e;
         const rect = ativo.getBoundingClientRect();
+        const palcoRect = document.getElementById('palco').getBoundingClientRect();
+        
         offset.x = evt.clientX - rect.left;
         offset.y = evt.clientY - rect.top;
         lastX = evt.clientX;
+        ativo.style.zIndex = 100;
 
         window.addEventListener('mousemove', move);
         window.addEventListener('touchmove', move, {passive: false});
@@ -157,7 +182,6 @@
         let x = evt.clientX - palco.left - offset.x;
         let y = evt.clientY - palco.top - offset.y;
 
-        // Trava dentro do palco
         x = Math.max(0, Math.min(x, palco.width - ativo.offsetWidth));
         y = Math.max(0, Math.min(y, palco.height - ativo.offsetHeight));
 
@@ -171,6 +195,7 @@
     }
 
     function stop() { 
+        if(ativo) ativo.style.zIndex = 10;
         ativo = null; 
         window.removeEventListener('mousemove', move);
         window.removeEventListener('touchmove', move);
@@ -182,23 +207,27 @@
         const r1 = o1.getBoundingClientRect(), r2 = o2.getBoundingClientRect();
         const touch = !(r1.right < r2.left || r1.left > r2.right || r1.bottom < r2.top || r1.top > r2.bottom);
 
-        if(modo === 'atrito' && touch && distAtrito > 600) {
+        if(modo === 'atrito' && touch && distAtrito > 800) {
             o1.style.backgroundColor = '#ef4444'; o1.querySelector('.carga-txt').innerText = '+5';
             o2.style.backgroundColor = '#3b82f6'; o2.querySelector('.carga-txt').innerText = '-5';
-            document.getElementById('texto').innerText = "✅ Sucesso! Elétrons transferidos.";
+            document.getElementById('texto').innerText = "✅ Eletrizados! O balão ganhou elétrons.";
         }
         if(modo === 'contato' && touch) {
-            let media = (parseFloat(o1.dataset.q) + parseFloat(o2.dataset.q)) / 2;
-            o1.dataset.q = o2.dataset.q = media;
-            o1.style.backgroundColor = o2.style.backgroundColor = '#f97316';
-            o1.querySelector('.carga-txt').innerText = o2.querySelector('.carga-txt').innerText = media.toFixed(1);
-            document.getElementById('texto').innerText = "✅ Cargas equilibradas!";
+            let q1 = parseFloat(o1.dataset.q), q2 = parseFloat(o2.dataset.q);
+            if(q1 !== q2) {
+                let m = (q1 + q2) / 2;
+                o1.dataset.q = o2.dataset.q = m;
+                o1.style.backgroundColor = o2.style.backgroundColor = '#f97316';
+                o1.querySelector('.carga-txt').innerText = o2.querySelector('.carga-txt').innerText = m.toFixed(1);
+                document.getElementById('texto').innerText = "✅ Contato: as cargas se dividiram.";
+            }
         }
         if(modo === 'inducao') {
             const dist = Math.abs((r1.left + r1.width/2) - (r2.left + r2.width/2));
-            if(dist < 110) {
-                o2.innerHTML = `<div class="carga-txt">POLARIZADA</div><div style="display:flex;gap:10px;font-weight:bold"><span style="color:#f87171">+</span><span style="color:#60a5fa">-</span></div>`;
+            if(dist < 100) {
+                o2.innerHTML = `<div class="carga-txt">POLARIZADA</div><div style="display:flex;gap:10px;font-size:20px"><span>+</span><span>-</span></div>`;
                 o2.style.borderColor = '#fbbf24';
+                document.getElementById('texto').innerText = "🧲 Indução: cargas separadas sem toque.";
             } else {
                 o2.innerHTML = `<div class="carga-txt">NEUTRA</div>`;
                 o2.style.borderColor = '#fff';
@@ -207,7 +236,7 @@
     }
 
     window.onload = resetar;
-    window.onresize = resetar; // Recalcula posições se girar o celular
+    window.addEventListener('resize', resetar);
 </script>
 </body>
 </html>
