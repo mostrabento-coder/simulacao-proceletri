@@ -3,87 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Simulador de Física - Final Fix</title>
+    <title>Simulador de Física Universal</title>
     <style>
-        /* Bloqueio de rolagem e seleção */
-        html, body { 
-            position: fixed; overflow: hidden; width: 100%; height: 100%; 
-            margin: 0; padding: 0; background: #0f172a; font-family: sans-serif;
+        :root { 
+            --fundo: #0f172a; --card: #1e293b; --acento: #fbbf24; 
+            --header-h: 60px; --footer-h: 120px;
         }
 
-        /* Container que agrupa tudo e evita que o rodapé suma */
-        .app-wrapper {
-            display: flex; flex-direction: column;
-            height: 100%; width: 100%;
-            padding: 5px;
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-tap-highlight-color: transparent; }
+
+        body { 
+            background: var(--fundo); color: white; font-family: system-ui, sans-serif;
+            width: 100vw; height: 100vh; height: 100dvh;
+            display: grid;
+            grid-template-rows: var(--header-h) 1fr var(--footer-h);
+            overflow: hidden; /* Impede scroll que corta o botão */
         }
 
-        /* Menu de abas menores para caber em telas estreitas */
-        .tabs { 
-            display: flex; gap: 3px; margin-bottom: 5px; height: 45px; flex-shrink: 0;
+        /* Topo: Abas */
+        header { 
+            display: flex; gap: 8px; padding: 10px; background: #020617; 
+            align-items: center; justify-content: center;
         }
         .tab { 
-            flex: 1; border: none; border-radius: 5px; background: #334155; 
-            color: #fff; font-size: 10px; font-weight: bold; text-transform: uppercase;
+            padding: 10px 20px; border: none; border-radius: 8px; 
+            background: #334155; color: #94a3b8; cursor: pointer;
+            font-weight: bold; font-size: 14px; transition: 0.3s;
         }
-        .tab.active { background: #fbbf24; color: #000; }
+        .tab.active { background: var(--acento); color: #000; }
 
-        /* Área do Palco - Ajustada para ser menor e sempre visível */
-        #palco { 
-            flex-grow: 1; background: #000; border: 2px solid #334155; 
-            border-radius: 10px; position: relative; touch-action: none;
-            margin-bottom: 5px;
-        }
-
-        /* Painel de Controle - Onde fica o Reset */
-        .controls {
-            height: 120px; background: #1e293b; border-radius: 10px;
-            padding: 10px; flex-shrink: 0; border-bottom: 4px solid #fbbf24;
-            display: flex; flex-direction: column; justify-content: space-between;
+        /* Centro: Palco de Simulação */
+        main { 
+            position: relative; margin: 0 15px; background: #000; 
+            border: 2px solid #334155; border-radius: 15px; 
+            overflow: hidden; touch-action: none;
         }
 
-        /* Botão de Reset Grande para o Polegar */
-        .btn-reset {
-            background: #475569; color: white; border: none; padding: 12px;
-            border-radius: 8px; font-weight: bold; font-size: 14px; width: 100%;
+        /* Rodapé: Info e Reset */
+        footer { 
+            background: var(--card); padding: 15px 20px; 
+            display: flex; flex-direction: column; justify-content: center;
+            border-top: 3px solid var(--acento);
         }
+        .footer-content { 
+            max-width: 800px; margin: 0 auto; width: 100%;
+            display: flex; align-items: center; justify-content: space-between; gap: 20px;
+        }
+        .textos { flex: 1; }
+        .textos h2 { font-size: 18px; color: var(--acento); margin-bottom: 4px; }
+        .textos p { font-size: 14px; color: #cbd5e1; }
+        
+        .reset-btn {
+            background: #475569; color: white; border: none; padding: 15px 30px;
+            border-radius: 10px; font-weight: bold; cursor: pointer; white-space: nowrap;
+        }
+        .reset-btn:active { transform: scale(0.98); background: #64748b; }
 
-        /* Objetos de Interação */
+        /* Objetos */
         .obj { 
             position: absolute; display: flex; align-items: center; justify-content: center; 
-            border: 2px solid #fff; z-index: 10; font-weight: bold;
+            border: 2px solid #fff; cursor: grab; z-index: 10;
         }
-        .esfera { width: 50px; height: 50px; border-radius: 50%; }
-        .retangulo { width: 80px; height: 30px; border-radius: 4px; }
+        .obj:active { cursor: grabbing; }
+        .esfera { width: 70px; height: 70px; border-radius: 50%; }
+        .retangulo { width: 110px; height: 40px; border-radius: 6px; }
         
         .label { 
-            position: absolute; top: -22px; font-size: 10px; color: #fbbf24;
-            background: rgba(0,0,0,0.8); padding: 1px 4px; border-radius: 3px;
+            position: absolute; top: -30px; font-size: 12px; font-weight: bold;
+            background: rgba(0,0,0,0.8); padding: 3px 8px; border-radius: 5px;
+            color: var(--acento); pointer-events: none;
         }
 
-        h2 { font-size: 14px; margin: 0; color: #fbbf24; }
-        p { font-size: 11px; margin: 2px 0; color: #cbd5e1; }
+        /* Ajustes Específicos para CELULAR */
+        @media (max-width: 600px) {
+            :root { --footer-h: 150px; }
+            .footer-content { flex-direction: column; gap: 10px; text-align: center; }
+            .tab { padding: 8px 10px; font-size: 12px; }
+            .reset-btn { width: 100%; padding: 12px; }
+            .esfera { width: 60px; height: 60px; }
+            .retangulo { width: 90px; height: 35px; }
+        }
     </style>
 </head>
 <body>
 
-<div class="app-wrapper">
-    <div class="tabs">
-        <button class="tab active" id="t-atrito" onclick="setModo('atrito')">Atrito</button>
-        <button class="tab" id="t-contato" onclick="setModo('contato')">Contato</button>
-        <button class="tab" id="t-inducao" onclick="setModo('inducao')">Indução</button>
-    </div>
+    <header>
+        <button class="tab active" id="t-atrito" onclick="setModo('atrito')">ATRITO</button>
+        <button class="tab" id="t-contato" onclick="setModo('contato')">CONTATO</button>
+        <button class="tab" id="t-inducao" onclick="setModo('inducao')">INDUÇÃO</button>
+    </header>
 
-    <div id="palco"></div>
+    <main id="palco"></main>
 
-    <div class="controls">
-        <div>
-            <h2 id="title">Atrito</h2>
-            <p id="desc">Arraste os itens.</p>
+    <footer>
+        <div class="footer-content">
+            <div class="textos">
+                <h2 id="title">⚡ Atrito</h2>
+                <p id="desc">Esfregue o balão no casaco para gerar carga.</p>
+            </div>
+            <button class="reset-btn" onclick="init()">🔄 REINICIAR</button>
         </div>
-        <button class="btn-reset" onclick="init()">🔄 REINICIAR</button>
-    </div>
-</div>
+    </footer>
 
 <script>
     let modo = 'atrito', ativo = null, offset = {x:0, y:0}, dist = 0, lastX = 0;
@@ -96,20 +116,22 @@
     }
 
     function create(id, xP, yP, type, color, q, txt) {
-        const p = document.getElementById('palco');
+        const palco = document.getElementById('palco');
         const d = document.createElement('div');
         d.id = id; d.className = 'obj ' + type;
         d.style.backgroundColor = color;
         d.dataset.q = q;
-        p.appendChild(d);
+        palco.appendChild(d);
 
-        // Posicionamento
-        const r = p.getBoundingClientRect();
-        d.style.left = (r.width * xP / 100) + 'px';
-        d.style.top = (r.height * yP / 100) + 'px';
+        // Posicionamento responsivo em %
+        setTimeout(() => {
+            const r = palco.getBoundingClientRect();
+            d.style.left = (r.width * xP / 100) + 'px';
+            d.style.top = (r.height * yP / 100) + 'px';
+        }, 10);
 
-        d.innerHTML = `<div class="label">${txt}</div><span>${q!=0?(q>0?'+'+q:q):''}</span>`;
-        d.ontouchstart = d.onmousedown = start;
+        d.innerHTML = `<div class="label">${txt}</div><span style="font-weight:bold">${q!=0?(q>0?'+'+q:q):''}</span>`;
+        d.onmousedown = d.ontouchstart = start;
     }
 
     function init() {
@@ -118,17 +140,17 @@
         const T = document.getElementById('title'), D = document.getElementById('desc');
 
         if(modo==='atrito'){
-            T.innerText="⚡ Atrito"; D.innerText="Esfregue o balão no casaco.";
-            create('o1', 10, 30, 'retangulo', '#64748b', 0, 'CASACO');
+            T.innerText="⚡ Eletrização por Atrito"; D.innerText="Esfregue o balão rapidamente sobre o casaco.";
+            create('o1', 15, 30, 'retangulo', '#64748b', 0, 'CASACO');
             create('o2', 60, 30, 'esfera', '#475569', 0, 'BALÃO');
         } else if(modo==='contato'){
-            T.innerText="⚡ Contato"; D.innerText="Toque a esfera (+) na (0).";
-            create('o1', 15, 35, 'esfera', '#ef4444', 10, '+10');
-            create('o2', 65, 35, 'esfera', '#64748b', 0, '0');
+            T.innerText="⚡ Eletrização por Contato"; D.innerText="Toque a esfera vermelha na esfera cinza.";
+            create('o1', 20, 35, 'esfera', '#ef4444', 10, '+10');
+            create('o2', 60, 35, 'esfera', '#64748b', 0, '0');
         } else {
-            T.innerText="⚡ Indução"; D.innerText="Aproxime o bastão da esfera.";
-            create('o1', 5, 40, 'retangulo', '#3b82f6', -10, 'BASTÃO');
-            create('o2', 70, 35, 'esfera', '#64748b', 0, 'NEUTRA');
+            T.innerText="⚡ Indução Elétrica"; D.innerText="Aproxime o bastão da esfera (não toque!).";
+            create('o1', 10, 40, 'retangulo', '#3b82f6', -10, 'BASTÃO');
+            create('o2', 65, 35, 'esfera', '#64748b', 0, 'NEUTRA');
         }
     }
 
@@ -137,9 +159,12 @@
         ativo = this;
         const ev = e.type.includes('touch') ? e.touches[0] : e;
         const r = ativo.getBoundingClientRect();
+        const pR = document.getElementById('palco').getBoundingClientRect();
+        
         offset = { x: ev.clientX - r.left, y: ev.clientY - r.top };
         lastX = ev.clientX;
-        ativo.style.zIndex = 100;
+        ativo.style.zIndex = 1000;
+
         window.onmousemove = window.ontouchmove = move;
         window.onmouseup = window.ontouchend = stop;
     }
@@ -148,10 +173,16 @@
         if(!ativo) return;
         const ev = e.type.includes('touch') ? e.touches[0] : e;
         const p = document.getElementById('palco').getBoundingClientRect();
-        let x = ev.clientX - p.left - offset.x, y = ev.clientY - p.top - offset.y;
+        
+        let x = ev.clientX - p.left - offset.x;
+        let y = ev.clientY - p.top - offset.y;
+
         x = Math.max(0, Math.min(x, p.width - ativo.offsetWidth));
         y = Math.max(0, Math.min(y, p.height - ativo.offsetHeight));
-        ativo.style.left = x + 'px'; ativo.style.top = y + 'px';
+
+        ativo.style.left = x + 'px';
+        ativo.style.top = y + 'px';
+
         if(modo==='atrito') dist += Math.abs(ev.clientX - lastX);
         lastX = ev.clientX;
         check();
@@ -165,22 +196,22 @@
         const r1 = o1.getBoundingClientRect(), r2 = o2.getBoundingClientRect();
         const hit = !(r1.right < r2.left || r1.left > r2.right || r1.bottom < r2.top || r1.top > r2.bottom);
 
-        if(modo==='atrito' && hit && dist > 700){
+        if(modo==='atrito' && hit && dist > 800){
             o1.style.backgroundColor='#ef4444'; o1.querySelector('.label').innerText='+5';
             o2.style.backgroundColor='#3b82f6'; o2.querySelector('.label').innerText='-5';
-            document.getElementById('desc').innerText="✅ Eletrizados!";
+            document.getElementById('desc').innerText="✅ Balão negativo e Casaco positivo!";
         }
         if(modo==='contato' && hit){
             let m = (parseFloat(o1.dataset.q) + parseFloat(o2.dataset.q)) / 2;
             o1.dataset.q = o2.dataset.q = m;
             o1.style.backgroundColor = o2.style.backgroundColor = '#f97316';
             o1.querySelector('.label').innerText = o2.querySelector('.label').innerText = m.toFixed(1);
-            document.getElementById('desc').innerText="✅ Cargas divididas!";
+            document.getElementById('desc').innerText="✅ Cargas equilibradas por contato.";
         }
         if(modo==='inducao'){
             const d = Math.abs((r1.left + r1.width/2) - (r2.left + r2.width/2));
-            if(d < 90) {
-                o2.innerHTML = `<div class="label">POLARIZADA</div><div style="display:flex;gap:5px"><span>+</span><span>-</span></div>`;
+            if(d < 100) {
+                o2.innerHTML = `<div class="label">POLARIZADA</div><div style="display:flex;gap:8px"><span>+</span><span>-</span></div>`;
                 o2.style.borderColor = '#fbbf24';
             } else {
                 o2.innerHTML = `<div class="label">NEUTRA</div>`; o2.style.borderColor = '#fff';
@@ -188,6 +219,7 @@
         }
     }
     window.onload = init;
+    window.onresize = init; // Recalcula se redimensionar a janela do PC
 </script>
 </body>
 </html>
