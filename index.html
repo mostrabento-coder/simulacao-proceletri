@@ -2,247 +2,192 @@
 <html lang="pt-PT">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Física Mobile Fix</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Simulador de Física - Final Fix</title>
     <style>
-        /* RESET TOTAL PARA MOBILE */
-        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-tap-highlight-color: transparent; }
-        
-        :root { 
-            --fundo: #0f172a; 
-            --card: #1e293b; 
-            --acento: #fbbf24; 
+        /* Bloqueio de rolagem e seleção */
+        html, body { 
+            position: fixed; overflow: hidden; width: 100%; height: 100%; 
+            margin: 0; padding: 0; background: #0f172a; font-family: sans-serif;
         }
 
-        body { 
-            background: var(--fundo); 
-            color: white; 
-            font-family: sans-serif;
-            height: 100vh;
-            height: 100dvh;
-            overflow: hidden; /* Impede qualquer tipo de scroll */
-            position: fixed; /* Trava a tela contra "pulos" do navegador */
-            width: 100%;
+        /* Container que agrupa tudo e evita que o rodapé suma */
+        .app-wrapper {
+            display: flex; flex-direction: column;
+            height: 100%; width: 100%;
+            padding: 5px;
         }
 
-        /* MENU SUPERIOR */
-        .menu { 
-            display: flex; 
-            padding: 8px; 
-            gap: 4px; 
-            background: #020617;
-            height: 60px;
+        /* Menu de abas menores para caber em telas estreitas */
+        .tabs { 
+            display: flex; gap: 3px; margin-bottom: 5px; height: 45px; flex-shrink: 0;
         }
         .tab { 
-            flex: 1; border: none; border-radius: 6px; 
-            background: #334155; color: #94a3b8; 
-            font-weight: bold; font-size: 10px; text-transform: uppercase;
+            flex: 1; border: none; border-radius: 5px; background: #334155; 
+            color: #fff; font-size: 10px; font-weight: bold; text-transform: uppercase;
         }
-        .tab.ativa { background: var(--acento); color: #000; }
+        .tab.active { background: #fbbf24; color: #000; }
 
-        /* PALCO (ÁREA DE ARRASTAR) */
+        /* Área do Palco - Ajustada para ser menor e sempre visível */
         #palco { 
-            position: absolute;
-            top: 65px; /* Abaixo do menu */
-            bottom: 140px; /* Espaço para o painel inferior */
-            left: 10px;
-            right: 10px;
-            background: #000;
-            border: 2px solid #334155;
-            border-radius: 12px;
-            overflow: hidden;
-            touch-action: none;
+            flex-grow: 1; background: #000; border: 2px solid #334155; 
+            border-radius: 10px; position: relative; touch-action: none;
+            margin-bottom: 5px;
         }
 
-        /* OBJETOS */
+        /* Painel de Controle - Onde fica o Reset */
+        .controls {
+            height: 120px; background: #1e293b; border-radius: 10px;
+            padding: 10px; flex-shrink: 0; border-bottom: 4px solid #fbbf24;
+            display: flex; flex-direction: column; justify-content: space-between;
+        }
+
+        /* Botão de Reset Grande para o Polegar */
+        .btn-reset {
+            background: #475569; color: white; border: none; padding: 12px;
+            border-radius: 8px; font-weight: bold; font-size: 14px; width: 100%;
+        }
+
+        /* Objetos de Interação */
         .obj { 
             position: absolute; display: flex; align-items: center; justify-content: center; 
-            border: 2px solid #fff; z-index: 10;
+            border: 2px solid #fff; z-index: 10; font-weight: bold;
         }
-        .esfera { width: 55px; height: 55px; border-radius: 50%; }
-        .retangulo { width: 85px; height: 30px; border-radius: 4px; }
+        .esfera { width: 50px; height: 50px; border-radius: 50%; }
+        .retangulo { width: 80px; height: 30px; border-radius: 4px; }
         
-        .carga-txt { 
-            position: absolute; top: -25px; font-size: 10px; font-weight: bold;
-            background: rgba(0,0,0,0.8); padding: 2px 5px; border-radius: 3px;
-            color: var(--acento); pointer-events: none;
+        .label { 
+            position: absolute; top: -22px; font-size: 10px; color: #fbbf24;
+            background: rgba(0,0,0,0.8); padding: 1px 4px; border-radius: 3px;
         }
 
-        /* PAINEL INFERIOR (FIXADO NO RODAPÉ) */
-        .info-panel { 
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 130px; /* Altura fixa garantida */
-            background: var(--card);
-            padding: 12px;
-            border-top: 3px solid var(--acento);
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-        #titulo { font-size: 14px; color: var(--acento); display: block; }
-        #texto { font-size: 12px; color: #cbd5e1; margin-bottom: 8px; line-height: 1.2; }
-        
-        .reset-btn {
-            background: #475569;
-            color: white;
-            border: none;
-            padding: 12px;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 14px;
-            width: 100%;
-        }
+        h2 { font-size: 14px; margin: 0; color: #fbbf24; }
+        p { font-size: 11px; margin: 2px 0; color: #cbd5e1; }
     </style>
 </head>
 <body>
 
-    <div class="menu">
-        <button id="btn-atrito" class="tab ativa" onclick="mudarModo('atrito')">Atrito</button>
-        <button id="btn-contato" class="tab" onclick="mudarModo('contato')">Contato</button>
-        <button id="btn-inducao" class="tab" onclick="mudarModo('inducao')">Indução</button>
+<div class="app-wrapper">
+    <div class="tabs">
+        <button class="tab active" id="t-atrito" onclick="setModo('atrito')">Atrito</button>
+        <button class="tab" id="t-contato" onclick="setModo('contato')">Contato</button>
+        <button class="tab" id="t-inducao" onclick="setModo('inducao')">Indução</button>
     </div>
 
     <div id="palco"></div>
-    
-    <div class="info-panel">
+
+    <div class="controls">
         <div>
-            <strong id="titulo">Atrito</strong>
-            <p id="texto">Arraste os itens para interagir.</p>
+            <h2 id="title">Atrito</h2>
+            <p id="desc">Arraste os itens.</p>
         </div>
-        <button class="reset-btn" onclick="resetar()">🔄 REINICIAR SIMULAÇÃO</button>
+        <button class="btn-reset" onclick="init()">🔄 REINICIAR</button>
     </div>
+</div>
 
 <script>
-    let modo = 'atrito';
-    let ativo = null;
-    let offset = { x: 0, y: 0 };
-    let distAtrito = 0;
-    let lastX = 0;
+    let modo = 'atrito', ativo = null, offset = {x:0, y:0}, dist = 0, lastX = 0;
 
-    function mudarModo(m) {
+    function setModo(m) {
         modo = m;
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('ativa'));
-        document.getElementById('btn-' + m).classList.add('ativa');
-        resetar();
+        document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+        document.getElementById('t-'+m).classList.add('active');
+        init();
     }
 
-    function criarObj(id, xP, yP, classe, cor, carga, label) {
-        const palco = document.getElementById('palco');
-        const div = document.createElement('div');
-        div.id = id;
-        div.className = 'obj ' + classe;
-        div.style.backgroundColor = cor;
-        div.dataset.q = carga;
+    function create(id, xP, yP, type, color, q, txt) {
+        const p = document.getElementById('palco');
+        const d = document.createElement('div');
+        d.id = id; d.className = 'obj ' + type;
+        d.style.backgroundColor = color;
+        d.dataset.q = q;
+        p.appendChild(d);
 
-        // Renderiza primeiro para pegar o tamanho do palco
-        palco.appendChild(div);
+        // Posicionamento
+        const r = p.getBoundingClientRect();
+        d.style.left = (r.width * xP / 100) + 'px';
+        d.style.top = (r.height * yP / 100) + 'px';
 
-        const rect = palco.getBoundingClientRect();
-        div.style.left = (rect.width * xP / 100) + 'px';
-        div.style.top = (rect.height * yP / 100) + 'px';
-
-        div.innerHTML = `<div class="carga-txt">${label}</div><span style="font-weight:bold">${carga != 0 ? (carga > 0 ? '+'+carga : carga) : ''}</span>`;
-        
-        div.addEventListener('touchstart', start, {passive: false});
-        div.addEventListener('mousedown', start);
+        d.innerHTML = `<div class="label">${txt}</div><span>${q!=0?(q>0?'+'+q:q):''}</span>`;
+        d.ontouchstart = d.onmousedown = start;
     }
 
-    function resetar() {
-        const palco = document.getElementById('palco');
-        palco.innerHTML = '';
-        distAtrito = 0;
-        
-        if(modo === 'atrito') {
-            document.getElementById('titulo').innerText = "⚡ Atrito";
-            document.getElementById('texto').innerText = "Esfregue o balão no casaco várias vezes.";
-            criarObj('obj1', 10, 30, 'retangulo', '#64748b', 0, 'CASACO');
-            criarObj('obj2', 60, 30, 'esfera', '#475569', 0, 'BALÃO');
-        } else if(modo === 'contato') {
-            document.getElementById('titulo').innerText = "⚡ Contato";
-            document.getElementById('texto').innerText = "Toque a esfera vermelha na cinza.";
-            criarObj('obj1', 10, 30, 'esfera', '#ef4444', 10, '+10');
-            criarObj('obj2', 60, 30, 'esfera', '#64748b', 0, '0');
-        } else if(modo === 'inducao') {
-            document.getElementById('titulo').innerText = "⚡ Indução";
-            document.getElementById('texto').innerText = "Aproxime o bastão da esfera (sem tocar).";
-            criarObj('obj1', 5, 35, 'retangulo', '#3b82f6', -10, 'BASTÃO');
-            criarObj('obj2', 65, 30, 'esfera', '#64748b', 0, 'NEUTRA');
+    function init() {
+        const p = document.getElementById('palco');
+        p.innerHTML = ''; dist = 0;
+        const T = document.getElementById('title'), D = document.getElementById('desc');
+
+        if(modo==='atrito'){
+            T.innerText="⚡ Atrito"; D.innerText="Esfregue o balão no casaco.";
+            create('o1', 10, 30, 'retangulo', '#64748b', 0, 'CASACO');
+            create('o2', 60, 30, 'esfera', '#475569', 0, 'BALÃO');
+        } else if(modo==='contato'){
+            T.innerText="⚡ Contato"; D.innerText="Toque a esfera (+) na (0).";
+            create('o1', 15, 35, 'esfera', '#ef4444', 10, '+10');
+            create('o2', 65, 35, 'esfera', '#64748b', 0, '0');
+        } else {
+            T.innerText="⚡ Indução"; D.innerText="Aproxime o bastão da esfera.";
+            create('o1', 5, 40, 'retangulo', '#3b82f6', -10, 'BASTÃO');
+            create('o2', 70, 35, 'esfera', '#64748b', 0, 'NEUTRA');
         }
     }
 
     function start(e) {
-        e.preventDefault();
+        if(e.cancelable) e.preventDefault();
         ativo = this;
-        const evt = e.type === 'touchstart' ? e.touches[0] : e;
-        const rect = ativo.getBoundingClientRect();
-        offset.x = evt.clientX - rect.left;
-        offset.y = evt.clientY - rect.top;
-        lastX = evt.clientX;
-        ativo.style.zIndex = 500;
-
-        window.addEventListener('touchmove', move, {passive: false});
-        window.addEventListener('mousemove', move);
-        window.addEventListener('touchend', stop);
-        window.addEventListener('mouseup', stop);
+        const ev = e.type.includes('touch') ? e.touches[0] : e;
+        const r = ativo.getBoundingClientRect();
+        offset = { x: ev.clientX - r.left, y: ev.clientY - r.top };
+        lastX = ev.clientX;
+        ativo.style.zIndex = 100;
+        window.onmousemove = window.ontouchmove = move;
+        window.onmouseup = window.ontouchend = stop;
     }
 
     function move(e) {
         if(!ativo) return;
-        const evt = e.type === 'touchmove' ? e.touches[0] : e;
-        const pRect = document.getElementById('palco').getBoundingClientRect();
-        
-        let x = evt.clientX - pRect.left - offset.x;
-        let y = evt.clientY - pRect.top - offset.y;
-
-        x = Math.max(0, Math.min(x, pRect.width - ativo.offsetWidth));
-        y = Math.max(0, Math.min(y, pRect.height - ativo.offsetHeight));
-
-        ativo.style.left = x + 'px';
-        ativo.style.top = y + 'px';
-
-        if(modo === 'atrito') distAtrito += Math.abs(evt.clientX - lastX);
-        lastX = evt.clientX;
-        verificar();
+        const ev = e.type.includes('touch') ? e.touches[0] : e;
+        const p = document.getElementById('palco').getBoundingClientRect();
+        let x = ev.clientX - p.left - offset.x, y = ev.clientY - p.top - offset.y;
+        x = Math.max(0, Math.min(x, p.width - ativo.offsetWidth));
+        y = Math.max(0, Math.min(y, p.height - ativo.offsetHeight));
+        ativo.style.left = x + 'px'; ativo.style.top = y + 'px';
+        if(modo==='atrito') dist += Math.abs(ev.clientX - lastX);
+        lastX = ev.clientX;
+        check();
     }
 
-    function stop() { ativo = null; }
+    function stop() { if(ativo) ativo.style.zIndex = 10; ativo = null; }
 
-    function verificar() {
-        const o1 = document.getElementById('obj1'), o2 = document.getElementById('obj2');
+    function check() {
+        const o1 = document.getElementById('o1'), o2 = document.getElementById('o2');
         if(!o1 || !o2) return;
         const r1 = o1.getBoundingClientRect(), r2 = o2.getBoundingClientRect();
-        const col = !(r1.right < r2.left || r1.left > r2.right || r1.bottom < r2.top || r1.top > r2.bottom);
+        const hit = !(r1.right < r2.left || r1.left > r2.right || r1.bottom < r2.top || r1.top > r2.bottom);
 
-        if(modo === 'atrito' && col && distAtrito > 700) {
-            o1.style.backgroundColor = '#ef4444'; o1.querySelector('.carga-txt').innerText = '+5';
-            o2.style.backgroundColor = '#3b82f6'; o2.querySelector('.carga-txt').innerText = '-5';
-            document.getElementById('texto').innerText = "✅ Sucesso! O balão ficou eletrizado.";
+        if(modo==='atrito' && hit && dist > 700){
+            o1.style.backgroundColor='#ef4444'; o1.querySelector('.label').innerText='+5';
+            o2.style.backgroundColor='#3b82f6'; o2.querySelector('.label').innerText='-5';
+            document.getElementById('desc').innerText="✅ Eletrizados!";
         }
-        if(modo === 'contato' && col) {
+        if(modo==='contato' && hit){
             let m = (parseFloat(o1.dataset.q) + parseFloat(o2.dataset.q)) / 2;
             o1.dataset.q = o2.dataset.q = m;
             o1.style.backgroundColor = o2.style.backgroundColor = '#f97316';
-            o1.querySelector('.carga-txt').innerText = o2.querySelector('.carga-txt').innerText = m.toFixed(1);
-            document.getElementById('texto').innerText = "✅ Cargas divididas por contato.";
+            o1.querySelector('.label').innerText = o2.querySelector('.label').innerText = m.toFixed(1);
+            document.getElementById('desc').innerText="✅ Cargas divididas!";
         }
-        if(modo === 'inducao') {
-            const dist = Math.abs((r1.left + r1.width/2) - (r2.left + r2.width/2));
-            if(dist < 90) {
-                o2.innerHTML = `<div class="carga-txt">POLARIZADA</div><div style="display:flex;gap:8px"><span>+</span><span>-</span></div>`;
+        if(modo==='inducao'){
+            const d = Math.abs((r1.left + r1.width/2) - (r2.left + r2.width/2));
+            if(d < 90) {
+                o2.innerHTML = `<div class="label">POLARIZADA</div><div style="display:flex;gap:5px"><span>+</span><span>-</span></div>`;
                 o2.style.borderColor = '#fbbf24';
             } else {
-                o2.innerHTML = `<div class="carga-txt">NEUTRA</div>`;
-                o2.style.borderColor = '#fff';
+                o2.innerHTML = `<div class="label">NEUTRA</div>`; o2.style.borderColor = '#fff';
             }
         }
     }
-
-    window.onload = resetar;
+    window.onload = init;
 </script>
 </body>
 </html>
