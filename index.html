@@ -1,35 +1,67 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-PT">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulador de Eletrização Completo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Simulador de Eletrização - Toque e Arraste</title>
     <style>
+        * {
+            box-sizing: border-box;
+            user-select: none; /* Evita seleção de texto durante o arrasto */
+            -webkit-tap-highlight-color: transparent;
+        }
         :root { --fundo: #0f172a; --card: #1e293b; --acento: #fbbf24; }
-        body { background: var(--fundo); color: white; font-family: sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; }
+        body { background: var(--fundo); color: white; font-family: sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; padding: 10px; }
         
         /* Menu Superior */
         .menu { display: flex; width: 100%; max-width: 800px; gap: 5px; margin-top: 10px; }
-        .tab { flex: 1; padding: 15px; border: none; background: #334155; color: #94a3b8; cursor: pointer; border-radius: 8px 8px 0 0; font-weight: bold; }
+        .tab { flex: 1; padding: 12px 5px; border: none; background: #334155; color: #94a3b8; cursor: pointer; border-radius: 8px 8px 0 0; font-weight: bold; font-size: 0.9rem; }
         .tab.ativa { background: var(--card); color: var(--acento); border-bottom: 3px solid var(--acento); }
 
-
         /* Área de Jogo */
-        .container { width: 100%; max-width: 800px; background: var(--card); padding: 20px; border-radius: 0 0 15px 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
-        .palco { height: 300px; background: #000; border-radius: 10px; position: relative; border: 2px solid #334155; overflow: hidden; touch-action: none; }
+        .container { width: 100%; max-width: 800px; background: var(--card); padding: 15px; border-radius: 0 0 15px 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
+        .palco { 
+            height: 450px; 
+            background: #000; 
+            border-radius: 10px; 
+            position: relative; 
+            border: 2px solid #334155; 
+            overflow: hidden; 
+            touch-action: none; /* Impede rolagem/pinch ao arrastar dentro do palco */
+        }
         
         /* Elementos Visuais */
-        .obj { position: absolute; cursor: grab; display: flex; align-items: center; justify-content: center; font-weight: bold; user-select: none; transition: background 0.3s; border: 2px solid #fff; }
+        .obj { 
+            position: absolute; 
+            cursor: grab; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-weight: bold; 
+            user-select: none; 
+            transition: background 0.2s; 
+            border: 2px solid #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            touch-action: none;
+        }
+        .obj:active { cursor: grabbing; }
         .esfera { width: 80px; height: 80px; border-radius: 50%; }
         .retangulo { width: 120px; height: 40px; border-radius: 5px; }
         
         /* Instruções */
         .instrucoes { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; margin-top: 15px; border-left: 4px solid var(--acento); }
-        .carga-txt { position: absolute; top: -25px; width: 100%; text-align: center; color: var(--acento); font-family: monospace; }
+        .carga-txt { position: absolute; top: -25px; width: 100%; text-align: center; color: var(--acento); font-family: monospace; font-size: 14px; font-weight: bold; background: rgba(0,0,0,0.5); border-radius: 10px; padding: 2px; }
+        button { padding: 10px; cursor: pointer; background: #475569; color: white; border: none; border-radius: 5px; font-size: 1rem; margin-top: 5px; }
+        
+        @media (max-width: 600px) {
+            .esfera { width: 70px; height: 70px; }
+            .retangulo { width: 100px; height: 35px; }
+            .palco { height: 400px; }
+            .carga-txt { font-size: 10px; top: -20px; }
+        }
     </style>
 </head>
 <body>
-
 
     <div class="menu">
         <button id="btn-atrito" class="tab ativa" onclick="mudarModo('atrito')">ATRITO</button>
@@ -37,23 +69,23 @@
         <button id="btn-inducao" class="tab" onclick="mudarModo('inducao')">INDUÇÃO</button>
     </div>
 
-
     <div class="container">
         <div class="palco" id="palco"></div>
         
         <div class="instrucoes">
             <h3 id="titulo" style="margin-top:0">Atrito</h3>
-            <p id="texto">Arraste o balão e esfregue-o no casaco para transferir elétrons.</p>
-            <button onclick="resetar()" style="padding:10px; cursor:pointer; background:#475569; color:white; border:none; border-radius:5px;">Reiniciar Simulação</button>
+            <p id="texto">🔵 Toque no balão e arraste sobre o casaco (esfregue) para transferir elétrons.</p>
+            <button onclick="resetar()">🔄 Reiniciar Simulação</button>
         </div>
     </div>
-
 
 <script>
     let modo = 'atrito';
     let ativo = null;
-    let ultimaX = 0, distPercorrida = 0;
-
+    let ultimaX = 0;
+    let distanciaPercorrida = 0;
+    let startX = 0;
+    let isDragging = false;
 
     function mudarModo(m) {
         modo = m;
@@ -62,35 +94,34 @@
         resetar();
     }
 
-
     function resetar() {
         const palco = document.getElementById('palco');
         palco.innerHTML = '';
         const titulo = document.getElementById('titulo');
         const texto = document.getElementById('texto');
-        distPercorrida = 0;
-
+        distanciaPercorrida = 0;
+        isDragging = false;
+        ativo = null;
 
         if(modo === 'atrito') {
-            titulo.innerText = "Eletrização por Atrito";
-            texto.innerText = "Mova o balão rapidamente sobre o casaco. Veja as cargas mudarem!";
-            criarObj('obj1', 100, 100, 'retangulo', '#64748b', 0, 'CASACO');
-            criarObj('obj2', 300, 110, 'esfera', '#64748b', 0, 'BALÃO');
+            titulo.innerText = "⚡ Eletrização por Atrito";
+            texto.innerText = "🔵 Toque no balão e arraste (esfregue) rapidamente sobre o casaco várias vezes para gerar carga.";
+            criarObj('obj1', 100, 150, 'retangulo', '#64748b', 0, 'CASACO');
+            criarObj('obj2', 300, 160, 'esfera', '#64748b', 0, 'BALÃO');
         } 
         else if(modo === 'contato') {
-            titulo.innerText = "Eletrização por Contato";
-            texto.innerText = "Encoste a esfera vermelha (+10) na esfera cinza (0).";
-            criarObj('obj1', 100, 110, 'esfera', '#ef4444', 10, '+10');
-            criarObj('obj2', 600, 110, 'esfera', '#64748b', 0, '0');
+            titulo.innerText = "⚡ Eletrização por Contato";
+            texto.innerText = "🔴 Toque e encoste a esfera vermelha (+) na esfera cinza (neutra). As cargas se igualam.";
+            criarObj('obj1', 100, 150, 'esfera', '#ef4444', 10, '+10');
+            criarObj('obj2', 600, 150, 'esfera', '#64748b', 0, '0');
         }
         else if(modo === 'inducao') {
-            titulo.innerText = "Eletrização por Indução";
-            texto.innerText = "Aproxime o bastão negativo da esfera neutra sem tocar.";
-            criarObj('obj1', 50, 130, 'retangulo', '#3b82f6', -10, '- - -');
-            criarObj('obj2', 500, 110, 'esfera', '#64748b', 0, 'NEUTRA');
+            titulo.innerText = "⚡ Eletrização por Indução";
+            texto.innerText = "🔵 Aproxime o bastão negativo da esfera neutra sem tocar. Observe a polarização.";
+            criarObj('obj1', 50, 160, 'retangulo', '#3b82f6', -10, '- - -');
+            criarObj('obj2', 500, 150, 'esfera', '#64748b', 0, 'NEUTRA');
         }
     }
-
 
     function criarObj(id, x, y, classe, cor, carga, txt) {
         const div = document.createElement('div');
@@ -100,76 +131,177 @@
         div.style.top = y + 'px';
         div.style.backgroundColor = cor;
         div.dataset.q = carga;
-        div.innerHTML = `<div class="carga-txt">${txt}</div><span id="label-${id}">${carga === 0 ? '' : (carga > 0 ? '+' : '-') }</span>`;
         
-        div.onmousedown = div.ontouchstart = (e) => { 
-            ativo = div; 
-            div.style.zIndex = 1000;
-            ultimaX = e.clientX || e.touches[0].clientX;
-        };
+        // Label interno para carga
+        const cargaLabel = carga === 0 ? '' : (carga > 0 ? '+' + carga : '' + carga);
+        div.innerHTML = `<div class="carga-txt">${txt}</div><span id="label-${id}" style="font-size:1.2rem;">${cargaLabel}</span>`;
+        
+        // Adiciona os eventos de toque e mouse diretamente no elemento
+        div.addEventListener('touchstart', iniciarArrasto, {passive: false});
+        div.addEventListener('mousedown', iniciarArrasto);
         
         document.getElementById('palco').appendChild(div);
     }
 
-
-    window.onmousemove = window.ontouchmove = (e) => {
-        if(!ativo) return;
-        const palcoRect = document.getElementById('palco').getBoundingClientRect();
-        const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
-        const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
+    function iniciarArrasto(e) {
+        e.preventDefault();
+        if(ativo) return;
         
+        ativo = this;
+        ativo.style.zIndex = 1000;
+        ativo.style.cursor = 'grabbing';
+        
+        // Pega a posição inicial do toque/mouse
+        let clientX;
+        if (e.touches) {
+            clientX = e.touches[0].clientX;
+            // Previne scroll da página enquanto arrasta
+            document.body.style.overflow = 'hidden';
+        } else {
+            clientX = e.clientX;
+        }
+        
+        ultimaX = clientX;
+        startX = clientX;
+        distanciaPercorrida = 0;
+        isDragging = true;
+        
+        // Adiciona os eventos globais
+        window.addEventListener('touchmove', moverArrasto, {passive: false});
+        window.addEventListener('mousemove', moverArrasto);
+        window.addEventListener('touchend', finalizarArrasto);
+        window.addEventListener('mouseup', finalizarArrasto);
+    }
+
+    function moverArrasto(e) {
+        if (!ativo || !isDragging) return;
+        e.preventDefault();
+        
+        const palcoRect = document.getElementById('palco').getBoundingClientRect();
+        let clientX, clientY;
+        
+        if (e.touches) {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else {
+            clientX = e.clientX;
+            clientY = e.clientY;
+        }
+        
+        // Calcula nova posição dentro do palco
         let x = clientX - palcoRect.left - (ativo.offsetWidth / 2);
         let y = clientY - palcoRect.top - (ativo.offsetHeight / 2);
         
+        // Limita dentro das bordas do palco (opcional)
+        x = Math.max(0, Math.min(x, palcoRect.width - ativo.offsetWidth));
+        y = Math.max(0, Math.min(y, palcoRect.height - ativo.offsetHeight));
+        
         ativo.style.left = x + 'px';
         ativo.style.top = y + 'px';
-
-
-        processarFisica();
-        distPercorrida += Math.abs(clientX - ultimaX);
+        
+        // Acumula distância percorrida para o atrito
+        const deltaX = Math.abs(clientX - ultimaX);
+        distanciaPercorrida += deltaX;
         ultimaX = clientX;
-    };
+        
+        // Processa a física a cada movimento
+        processarFisica();
+    }
 
-
-    window.onmouseup = window.ontouchend = () => { ativo = null; };
-
+    function finalizarArrasto(e) {
+        if (!ativo) return;
+        e.preventDefault();
+        
+        ativo.style.cursor = 'grab';
+        ativo.style.zIndex = '';
+        ativo = null;
+        isDragging = false;
+        
+        // Remove eventos globais
+        window.removeEventListener('touchmove', moverArrasto);
+        window.removeEventListener('mousemove', moverArrasto);
+        window.removeEventListener('touchend', finalizarArrasto);
+        window.removeEventListener('mouseup', finalizarArrasto);
+        document.body.style.overflow = '';
+    }
 
     function processarFisica() {
         const o1 = document.getElementById('obj1');
         const o2 = document.getElementById('obj2');
         if(!o1 || !o2) return;
 
-
         const r1 = o1.getBoundingClientRect();
         const r2 = o2.getBoundingClientRect();
+        
+        // Verifica colisão (sobreposição)
         const estaoTocando = !(r1.right < r2.left || r1.left > r2.right || r1.bottom < r2.top || r1.top > r2.bottom);
 
-
-        if(modo === 'atrito' && estaoTocando && distPercorrida > 500) {
-            o1.dataset.q = 5; o1.style.backgroundColor = '#ef4444'; o1.querySelector('.carga-txt').innerText = '+5';
-            o2.dataset.q = -5; o2.style.backgroundColor = '#3b82f6'; o2.querySelector('.carga-txt').innerText = '-5';
+        // MODO ATRITO
+        if(modo === 'atrito' && estaoTocando) {
+            // Quanto mais movimento, mais carga
+            if(distanciaPercorrida > 350) {
+                if(parseInt(o1.dataset.q) !== 5) {
+                    o1.dataset.q = 5; 
+                    o1.style.backgroundColor = '#ef4444'; 
+                    o1.querySelector('.carga-txt').innerHTML = '+5';
+                    o2.dataset.q = -5; 
+                    o2.style.backgroundColor = '#3b82f6'; 
+                    o2.querySelector('.carga-txt').innerHTML = '-5';
+                    
+                    const texto = document.getElementById('texto');
+                    texto.innerHTML = "✅ Balão ficou negativo (-5) e o casaco positivo (+5)! Arraste novamente para reiniciar a carga.";
+                    setTimeout(() => {
+                        if(document.getElementById('texto')) texto.innerHTML = "🔵 Toque no balão e arraste sobre o casaco (esfregue) para transferir elétrons.";
+                    }, 3000);
+                    distanciaPercorrida = 0;
+                }
+            }
         }
-
-
+        
+        // MODO CONTATO
         if(modo === 'contato' && estaoTocando) {
-            const media = (parseFloat(o1.dataset.q) + parseFloat(o2.dataset.q)) / 2;
-            o1.dataset.q = o2.dataset.q = media;
-            o1.style.backgroundColor = o2.style.backgroundColor = '#f97316';
-            o1.querySelector('.carga-txt').innerText = o2.querySelector('.carga-txt').innerText = '+' + media.toFixed(1);
+            // Só aplica a média se as cargas forem diferentes (para não ficar recalculando)
+            const q1 = parseFloat(o1.dataset.q);
+            const q2 = parseFloat(o2.dataset.q);
+            if(q1 !== q2) {
+                const media = (q1 + q2) / 2;
+                o1.dataset.q = media;
+                o2.dataset.q = media;
+                o1.style.backgroundColor = '#f97316';
+                o2.style.backgroundColor = '#f97316';
+                o1.querySelector('.carga-txt').innerHTML = (media > 0 ? '+' : '') + media.toFixed(1);
+                o2.querySelector('.carga-txt').innerHTML = (media > 0 ? '+' : '') + media.toFixed(1);
+                
+                const texto = document.getElementById('texto');
+                texto.innerHTML = "✅ Cargas igualadas! Agora ambas estão com " + media.toFixed(1);
+                setTimeout(() => {
+                    if(document.getElementById('texto')) texto.innerHTML = "🔴 Encoste a esfera vermelha (+) na esfera cinza (neutra) novamente para testar.";
+                }, 2000);
+            }
         }
 
-
+        // MODO INDUÇÃO
         if(modo === 'inducao') {
-            const dist = Math.abs(r1.right - r2.left);
-            if(dist < 50) {
-                o2.innerHTML = `<div class="carga-txt">POLARIZADA</div><div style="display:flex; justify-content:space-around; width:100%"><span style="color:red">+</span><span style="color:blue">-</span></div>`;
+            const r1 = o1.getBoundingClientRect();
+            const r2 = o2.getBoundingClientRect();
+            // Calcula distância entre os centros
+            const centro1x = r1.left + r1.width/2;
+            const centro2x = r2.left + r2.width/2;
+            const distancia = Math.abs(centro1x - centro2x);
+            
+            if(distancia < 80) {
+                o2.innerHTML = `<div class="carga-txt">⚡ POLARIZADA ⚡</div><div style="display:flex; justify-content:space-around; width:100%; font-size:1.5rem;"><span style="color:#ef4444">+</span><span style="color:#3b82f6">-</span></div>`;
+                o2.style.borderColor = '#fbbf24';
             } else {
-                o2.innerHTML = `<div class="carga-txt">NEUTRA</div>`;
+                if(o2.innerHTML.indexOf('NEUTRA') === -1) {
+                    o2.innerHTML = `<div class="carga-txt">NEUTRA</div>`;
+                    o2.style.borderColor = '#fff';
+                }
             }
         }
     }
 
-
+    // Inicializa
     window.onload = resetar;
 </script>
 </body>
